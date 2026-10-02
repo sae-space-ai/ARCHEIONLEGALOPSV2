@@ -1,16 +1,24 @@
-// Página de detalle de expediente con cronología de actuaciones
+// Página de detalle de expediente con cronología, documentos y auditoría
 
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Layout } from '../components/Layout';
 import { casesApi, eventsApi } from '../api/client-local';
-import type { Case, CaseEvent } from '../types';
+import { DocumentUpload } from '../components/DocumentUpload';
+import { DocumentList } from '../components/DocumentList';
+import { ExportButton } from '../components/ExportButton';
+import { AuditLog } from '../components/AuditLog';
+import type { Case, CaseEvent, Document } from '../types';
+
+type TabId = 'resumen' | 'cronologia' | 'documentos' | 'auditoria';
 
 export function CaseDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [caseData, setCaseData] = useState<Case | null>(null);
   const [events, setEvents] = useState<CaseEvent[]>([]);
+  const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<TabId>('resumen');
   const [showEventForm, setShowEventForm] = useState(false);
   const [newEvent, setNewEvent] = useState({
     fecha_actuacion: new Date().toISOString().split('T')[0],
@@ -42,6 +50,11 @@ export function CaseDetailPage() {
     }
   };
 
+  const loadDocuments = async () => {
+    if (!id) return;
+    // Los documentos se cargan en el componente DocumentList
+  };
+
   const handleCreateEvent = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!id) return;
@@ -60,6 +73,11 @@ export function CaseDetailPage() {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleDocumentUploaded = () => {
+    // Recargar lista de documentos
+    loadDocuments();
   };
 
   const eventTypeLabel = (tipo: string) => {
@@ -105,6 +123,13 @@ export function CaseDetailPage() {
     );
   }
 
+  const tabs: { id: TabId; label: string; icon: string }[] = [
+    { id: 'resumen', label: 'Resumen', icon: '📋' },
+    { id: 'cronologia', label: 'Cronología', icon: '📅' },
+    { id: 'documentos', label: 'Documentos', icon: '📄' },
+    { id: 'auditoria', label: 'Auditoría', icon: '🔍' },
+  ];
+
   return (
     <Layout>
       <div className="space-y-6">
@@ -140,96 +165,150 @@ export function CaseDetailPage() {
           </div>
         </div>
 
-        {/* Cronología de actuaciones */}
-        <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-white">Cronología de actuaciones</h2>
+        {/* Tabs */}
+        <div className="flex gap-2 border-b border-slate-700">
+          {tabs.map((tab) => (
             <button
-              onClick={() => setShowEventForm(!showEventForm)}
-              className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-900 text-sm font-medium rounded-lg transition-colors"
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
+                activeTab === tab.id
+                  ? 'bg-slate-800 text-amber-400 border-b-2 border-amber-500'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+              }`}
             >
-              {showEventForm ? 'Cancelar' : '+ Nueva actuación'}
+              <span className="mr-2">{tab.icon}</span>
+              {tab.label}
             </button>
-          </div>
+          ))}
+        </div>
 
-          {/* Formulario de nueva actuación */}
-          {showEventForm && (
-            <form onSubmit={handleCreateEvent} className="mb-6 p-4 bg-slate-900/50 rounded-lg border border-slate-700">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div>
-                  <label className="block text-xs text-slate-400 mb-1">Fecha</label>
-                  <input
-                    type="date"
-                    value={newEvent.fecha_actuacion}
-                    onChange={(e) => setNewEvent({ ...newEvent, fecha_actuacion: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs text-slate-400 mb-1">Tipo</label>
-                  <select
-                    value={newEvent.tipo}
-                    onChange={(e) => setNewEvent({ ...newEvent, tipo: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
-                  >
-                    <option value="hecho">Hecho</option>
-                    <option value="registro">Registro</option>
-                    <option value="comunicacion">Comunicación</option>
-                    <option value="plazo">Plazo</option>
-                    <option value="fundamento">Fundamento</option>
-                    <option value="peticion">Petición</option>
-                    <option value="prl">PRL</option>
-                  </select>
-                </div>
+        {/* Contenido de tabs */}
+        {activeTab === 'resumen' && (
+          <div className="space-y-6">
+            <ExportButton caseData={caseData} />
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
+                <p className="text-slate-400 text-sm">Total actuaciones</p>
+                <p className="text-2xl font-bold text-white mt-1">{events.length}</p>
               </div>
-              <div className="mb-4">
-                <label className="block text-xs text-slate-400 mb-1">Descripción</label>
-                <textarea
-                  value={newEvent.descripcion}
-                  onChange={(e) => setNewEvent({ ...newEvent, descripcion: e.target.value })}
-                  required
-                  rows={3}
-                  className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
-                  placeholder="Descripción de la actuación..."
-                />
+              <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
+                <p className="text-slate-400 text-sm">Documentos</p>
+                <p className="text-2xl font-bold text-white mt-1">{documents.length}</p>
               </div>
-              <button
-                type="submit"
-                disabled={submitting}
-                className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
-              >
-                {submitting ? 'Guardando...' : 'Guardar actuación'}
-              </button>
-            </form>
-          )}
-
-          {/* Lista de actuaciones */}
-          {events.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-slate-400">No hay actuaciones registradas</p>
+              <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
+                <p className="text-slate-400 text-sm">Última actuación</p>
+                <p className="text-sm text-white mt-1">
+                  {events.length > 0
+                    ? new Date(events[0].fecha_actuacion).toLocaleDateString('es-ES')
+                    : 'Sin actuaciones'}
+                </p>
+              </div>
             </div>
-          ) : (
-            <div className="space-y-4">
-              {events.map((event) => (
-                <div key={event.id} className="p-4 bg-slate-900/50 rounded-lg border border-slate-700">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <span className="px-2 py-0.5 bg-blue-500/20 text-blue-300 rounded text-xs border border-blue-500/30">
-                          {eventTypeLabel(event.tipo)}
-                        </span>
-                        <span className="text-slate-500 text-xs">
-                          {new Date(event.fecha_actuacion).toLocaleDateString('es-ES')}
-                        </span>
-                      </div>
-                      <p className="text-slate-300 text-sm">{event.descripcion}</p>
-                    </div>
+          </div>
+        )}
+
+        {activeTab === 'cronologia' && (
+          <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold text-white">Cronología de actuaciones</h2>
+              <button
+                onClick={() => setShowEventForm(!showEventForm)}
+                className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-900 text-sm font-medium rounded-lg transition-colors"
+              >
+                {showEventForm ? 'Cancelar' : '+ Nueva actuación'}
+              </button>
+            </div>
+
+            {showEventForm && (
+              <form onSubmit={handleCreateEvent} className="mb-6 p-4 bg-slate-900/50 rounded-lg border border-slate-700">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="block text-xs text-slate-400 mb-1">Fecha</label>
+                    <input
+                      type="date"
+                      value={newEvent.fecha_actuacion}
+                      onChange={(e) => setNewEvent({ ...newEvent, fecha_actuacion: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-slate-400 mb-1">Tipo</label>
+                    <select
+                      value={newEvent.tipo}
+                      onChange={(e) => setNewEvent({ ...newEvent, tipo: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    >
+                      <option value="hecho">Hecho</option>
+                      <option value="registro">Registro</option>
+                      <option value="comunicacion">Comunicación</option>
+                      <option value="plazo">Plazo</option>
+                      <option value="fundamento">Fundamento</option>
+                      <option value="peticion">Petición</option>
+                      <option value="prl">PRL</option>
+                    </select>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+                <div className="mb-4">
+                  <label className="block text-xs text-slate-400 mb-1">Descripción</label>
+                  <textarea
+                    value={newEvent.descripcion}
+                    onChange={(e) => setNewEvent({ ...newEvent, descripcion: e.target.value })}
+                    required
+                    rows={3}
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    placeholder="Descripción de la actuación..."
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
+                >
+                  {submitting ? 'Guardando...' : 'Guardar actuación'}
+                </button>
+              </form>
+            )}
+
+            {events.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-slate-400">No hay actuaciones registradas</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {events.map((event) => (
+                  <div key={event.id} className="p-4 bg-slate-900/50 rounded-lg border border-slate-700">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <span className="px-2 py-0.5 bg-blue-500/20 text-blue-300 rounded text-xs border border-blue-500/30">
+                            {eventTypeLabel(event.tipo)}
+                          </span>
+                          <span className="text-slate-500 text-xs">
+                            {new Date(event.fecha_actuacion).toLocaleDateString('es-ES')}
+                          </span>
+                        </div>
+                        <p className="text-slate-300 text-sm">{event.descripcion}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'documentos' && (
+          <div className="space-y-6">
+            <DocumentUpload caseId={caseData.id} onUploadSuccess={handleDocumentUploaded} />
+            <DocumentList caseId={caseData.id} onDocumentDeleted={loadDocuments} />
+          </div>
+        )}
+
+        {activeTab === 'auditoria' && (
+          <AuditLog entityType="case" entityId={caseData.id} />
+        )}
       </div>
     </Layout>
   );
