@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '../components/Layout';
-import { casesApi } from '../api/client';
+import { casesApi } from '../api/client-local';
 
 export function NewCasePage() {
   const navigate = useNavigate();

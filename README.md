@@ -1,69 +1,119 @@
-# ARCHEION LEGAL OPS V2 - Modo Público
+# ARCHEION LEGAL OPS V2
 
-## Estado Actual
+Sistema de gestión de expedientes legales con almacenamiento local.
 
-La aplicación ha sido configurada para funcionar en **modo público sin autenticación**.
+## Características
 
-### Cambios Realizados
+- ✅ **Sin base de datos**: Funciona completamente en el navegador
+- ✅ **Sin autenticación**: Acceso libre y directo
+- ✅ **Almacenamiento local**: Los datos se guardan en tu navegador
+- ✅ **Modo público**: Todos los expedientes son accesibles
 
-1. **Frontend**:
-   - Eliminada la página de login (`LoginPage.tsx`)
-   - Eliminado el componente de rutas protegidas (`ProtectedRoute.tsx`)
-   - Eliminado el hook de autenticación (`useAuth.ts`)
-   - Modificado `App.tsx` para que todas las rutas sean públicas
-   - Modificado `Layout.tsx` para mostrar "Modo público" en lugar del botón de logout
+## Uso
 
-2. **Backend**:
-   - Eliminados los endpoints de autenticación (`login.ts`, `logout.ts`, `session.ts`)
-   - Modificados los endpoints de expedientes para usar un `user_id` fijo
-   - Todos los expedientes pertenecen al usuario público: `00000000-0000-0000-0000-000000000000`
+### Panel de Control
+- Vista general de expedientes
+- Estadísticas por estado
+- Accesos rápidos
 
-3. **Base de Datos**:
-   - El usuario público debe existir en la tabla `users`
-   - Todos los expedientes y actuaciones están asociados a este usuario
+### Gestión de Expedientes
+- Crear nuevos expedientes
+- Listar y filtrar expedientes
+- Ver detalles de expedientes
+- Registrar actuaciones
 
-### Funcionalidades Disponibles
+### Búsqueda y Filtros
+- Buscar por referencia, título o descripción
+- Filtrar por categoría (Administrativo, Jurídico, PRL)
+- Filtrar por estado (Abierto, En curso, Cerrado, Archivado)
 
-- ✅ Panel de control (Dashboard)
-- ✅ Listado de expedientes
-- ✅ Creación de nuevos expedientes
-- ✅ Consulta de expedientes individuales
-- ✅ Registro de actuaciones
-- ✅ Cronología de actuaciones
-- ✅ Búsqueda y filtrado de expedientes
+## Instalación
 
-### Acceso
+```bash
+# Instalar dependencias
+npm install
 
-La aplicación es accesible públicamente en:
-- **URL**: https://archeionlegalopsv-2.vercel.app/
-- **Sin necesidad de login**
-- **Todos los usuarios ven los mismos expedientes**
+# Desarrollo
+npm run dev
 
-### Consideraciones de Seguridad
+# Build para producción
+npm run build
 
-⚠️ **ADVERTENCIA**: Esta configuración NO es segura para datos sensibles.
+# Preview del build
+npm run preview
+```
 
-- No hay aislamiento entre usuarios
-- Cualquier persona puede ver y modificar todos los expedientes
-- No hay registro de quién realizó cada acción
-- No hay protección contra accesos no autorizados
+## Despliegue
 
-### Próximos Pasos (si se requiere seguridad)
+### Vercel
+```bash
+# Instalar Vercel CLI
+npm i -g vercel
 
-Si en el futuro se necesita implementar autenticación:
+# Desplegar
+vercel
+```
 
-1. Restaurar los archivos eliminados desde el commit `85e4105`
-2. Configurar `DATABASE_URL` en Vercel
-3. Ejecutar las migraciones de base de datos
-4. Crear usuarios reales con contraseñas seguras
-5. Restaurar el sistema de autenticación bcrypt + JWT + cookies
+### Netlify
+```bash
+# Build
+npm run build
 
-### Build Status
+# Subir la carpeta dist/
+```
 
-✅ **Build exitoso**: 37 módulos, 186.71 KB JavaScript, 19.15 KB CSS
+## Estructura del Proyecto
 
----
+```
+├── src/
+│   ├── api/
+│   │   └── client-local.ts    # API con almacenamiento local
+│   ├── components/
+│   │   └── Layout.tsx         # Layout principal
+│   ├── pages/
+│   │   ├── DashboardPage.tsx  # Panel de control
+│   │   ├── CasesPage.tsx      # Lista de expedientes
+│   │   ├── CaseDetailPage.tsx # Detalle de expediente
+│   │   └── NewCasePage.tsx    # Nuevo expediente
+│   ├── types/
+│   │   └── index.ts           # Tipos TypeScript
+│   ├── App.tsx                # Componente principal
+│   ├── main.tsx               # Punto de entrada
+│   └── index.css              # Estilos globales
+├── index.html
+├── package.json
+├── tsconfig.json
+└── vite.config.js
+```
 
-**Última actualización**: 2026-10-02  
-**Modo**: Público sin autenticación  
-**Estado**: Funcional
+## Tecnologías
+
+- **React 18** - Biblioteca UI
+- **TypeScript** - Tipado estático
+- **Vite** - Build tool
+- **React Router** - Enrutamiento
+- **TailwindCSS** - Estilos
+- **LocalStorage** - Almacenamiento de datos
+
+## Limitaciones
+
+⚠️ **Importante**: 
+- Los datos se almacenan localmente en el navegador
+- Los datos NO se sincronizan entre dispositivos
+- Los datos se pierden si se limpia el caché del navegador
+- No hay respaldo automático
+- No es adecuado para producción con datos críticos
+
+## Migración a Base de Datos
+
+Si necesitas migrar a una base de datos real:
+
+1. Configurar PostgreSQL/Neon
+2. Restaurar archivos de API del backend
+3. Configurar variables de entorno
+4. Ejecutar migraciones SQL
+5. Actualizar `client-local.ts` para usar API REST
+
+## Licencia
+
+MIT

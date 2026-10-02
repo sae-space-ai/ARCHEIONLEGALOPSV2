@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Layout } from '../components/Layout';
-import { casesApi } from '../api/client';
+import { casesApi } from '../api/client-local';
 import type { Case } from '../types';
 
 export function DashboardPage() {

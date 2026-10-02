@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Layout } from '../components/Layout';
-import { casesApi, eventsApi } from '../api/client';
+import { casesApi, eventsApi } from '../api/client-local';
 import type { Case, CaseEvent } from '../types';
 
 export function CaseDetailPage() {
