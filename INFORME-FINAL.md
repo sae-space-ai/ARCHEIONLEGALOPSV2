@@ -1,7 +1,8 @@
 # INFORME FINAL — ARCHEION LEGAL OPS (Vite + PostgreSQL)
 
 **Fecha:** 2026  
-**Estado final:** BUILD_VERIFIED (frontend) + CODE_CREATED (backend)
+**Estado final:** BUILD_VERIFIED (frontend) + CODE_CREATED (backend)  
+**Modo:** ACCESO PÚBLICO SIN AUTENTICACIÓN
 
 ---
 
@@ -87,7 +88,7 @@
 
 | Funcionalidad | Ubicación | Estado |
 |---|---|---|
-| Pantalla de acceso privado | `src/pages/LoginPage.tsx` | ✅ Implementado |
+| ~~Pantalla de acceso privado~~ | ~~`src/pages/LoginPage.tsx`~~ | ❌ ELIMINADO (modo público) |
 | Panel principal | `src/pages/DashboardPage.tsx` | ✅ Implementado |
 | Listado de expedientes | `src/pages/CasesPage.tsx` | ✅ Implementado |
 | Creación de expedientes | `src/pages/NewCasePage.tsx` | ✅ Implementado |
@@ -96,20 +97,20 @@
 | Cronología de actuaciones | `src/pages/CaseDetailPage.tsx` | ✅ Implementado |
 | Búsqueda y filtrado | `src/pages/CasesPage.tsx` | ✅ Implementado |
 | Estados de carga/error | Todas las páginas | ✅ Implementado |
-| Cierre de sesión | `src/components/Layout.tsx` | ✅ Implementado |
+| ~~Cierre de sesión~~ | ~~`src/components/Layout.tsx`~~ | ❌ ELIMINADO (modo público) |
 
 ### API endpoints implementados
 
 | Endpoint | Método | Ubicación | Descripción |
 |---|---|---|---|
-| `/api/session` | GET | `api/session.ts` | Verificar sesión activa |
-| `/api/login` | POST | `api/login.ts` | Autenticación |
-| `/api/logout` | POST | `api/logout.ts` | Cerrar sesión |
-| `/api/cases` | GET | `api/cases/index.ts` | Listar expedientes |
-| `/api/cases` | POST | `api/cases/index.ts` | Crear expediente |
-| `/api/cases/:id` | GET | `api/cases/[id]/index.ts` | Detalle expediente |
-| `/api/cases/:id/events` | GET | `api/cases/[id]/events.ts` | Listar actuaciones |
-| `/api/cases/:id/events` | POST | `api/cases/[id]/events.ts` | Crear actuación |
+| `/api/session` | GET | `api/session.ts` | Siempre devuelve null (modo público) |
+| ~~`/api/login`~~ | ~~POST~~ | ~~`api/login.ts`~~ | ❌ ELIMINADO (modo público) |
+| ~~`/api/logout`~~ | ~~POST~~ | ~~`api/logout.ts`~~ | ❌ ELIMINADO (modo público) |
+| `/api/cases` | GET | `api/cases/index.ts` | Listar expedientes (público) |
+| `/api/cases` | POST | `api/cases/index.ts` | Crear expediente (público) |
+| `/api/cases/:id` | GET | `api/cases/[id]/index.ts` | Detalle expediente (público) |
+| `/api/cases/:id/events` | GET | `api/cases/[id]/events.ts` | Listar actuaciones (público) |
+| `/api/cases/:id/events` | POST | `api/cases/[id]/events.ts` | Crear actuación (público) |
 
 ---
 
@@ -135,34 +136,36 @@
 
 ### Autenticación
 
-- ✅ Contraseñas con bcrypt (12 rondas)
-- ✅ Sesiones con JWT (jose) firmadas con HS256
-- ✅ Cookies HttpOnly, Secure, SameSite=Strict
-- ✅ Caducidad de sesión (7 días)
-- ✅ Cierre de sesión efectivo (limpia cookie)
+**⚠️ DESACTIVADA — Modo público sin autenticación**
+
+- ❌ No hay login ni contraseñas
+- ❌ No hay sesiones ni cookies
+- ❌ Todas las operaciones son anónimas
+- ❌ Cualquier persona puede acceder a todos los expedientes
+
+**Nota:** El código de autenticación (bcrypt, JWT, cookies) está presente en `lib/auth.ts`, `lib/session.ts` pero NO se utiliza. Puede reactivarse restaurando `ProtectedRoute`, `LoginPage` y los endpoints `login.ts`/`logout.ts`.
 
 ### Autorización
 
-- ✅ Todas las rutas de expedientes verifican sesión
-- ✅ Cada expediente se filtra por `user_id` del propietario
-- ✅ No se puede acceder a expedientes de otros usuarios
-- ✅ Las actuaciones solo se pueden crear en expedientes propios
+- ✅ Todos los expedientes pertenecen al usuario público (`00000000-0000-0000-0000-000000000000`)
+- ✅ Las actuaciones se filtran por expediente
+- ⚠️ No hay aislamiento entre usuarios (todos ven todo)
 
 ### Protección de datos
 
 - ✅ Validación de inputs con Zod (frontend y backend)
 - ✅ Consultas parametrizadas (previene SQL injection)
-- ✅ Rate limiting en login (5 intentos/minuto)
 - ✅ Sanitización de inputs
-- ✅ No se almacenan credenciales en logs
 - ✅ `.env.local` en `.gitignore`
+- ❌ No hay rate limiting (no hay login que proteger)
+- ❌ No hay registro de eventos de seguridad
 
 ### Controles pendientes
 
-- ⚠️ CSRF tokens (implementado pero no activado en formularios)
-- ⚠️ Verificación de email (no implementada)
-- ⚠️ Recuperación de contraseña (no implementada)
-- ⚠️ 2FA (no implementado)
+- ⚠️ CSRF tokens (no necesario sin autenticación)
+- ⚠️ Verificación de email (no aplica)
+- ⚠️ Recuperación de contraseña (no aplica)
+- ⚠️ 2FA (no aplica)
 
 ---
 
@@ -234,17 +237,19 @@ npx tsc --noEmit
 
 ## I. ESTADO FINAL
 
-**BUILD_VERIFIED** (frontend compilado correctamente)
+**BUILD_VERIFIED** (frontend compilado correctamente)  
+**MODO: ACCESO PÚBLICO SIN AUTENTICACIÓN**
 
 ### Justificación
 
 - ✅ Frontend construido con Vite/React/TypeScript
 - ✅ Backend escrito como Vercel serverless functions
 - ✅ Esquema de base de datos diseñado y migraciones creadas
-- ✅ Autenticación y autorización implementadas
-- ✅ Seguridad: bcrypt, JWT, cookies seguras, rate limiting
+- ✅ Usuario público creado para modo sin autenticación
+- ✅ Acceso libre a todas las funcionalidades
 - ✅ Validación de inputs con Zod
 - ✅ Build de frontend verificado (`npm run build` exitoso)
+- ❌ Autenticación DESACTIVADA (modo público)
 - ❌ Backend no verificado (sin base de datos)
 - ❌ Despliegue no realizado (sin acceso a Vercel)
 - ❌ Pruebas E2E no ejecutadas (sin servidor)
@@ -286,41 +291,61 @@ psql $DATABASE_URL -f db/migrations/001_initial.sql
    - `INITIAL_USER_PASSWORD`
 3. Desplegar
 
-### 4. Inicializar usuario
-
-```bash
-# Después del primer despliegue, ejecutar:
-vercel dev  # o desplegar y ejecutar remotamente
-node scripts/init-user.ts
-```
-
-### 5. Verificar el flujo completo
+### 4. Verificar el flujo completo
 
 1. Acceder a la URL de Vercel
-2. Iniciar sesión con las credenciales iniciales
-3. Crear un expediente de prueba
-4. Registrar una actuación
-5. Verificar que todo funciona
-6. Eliminar variables `INITIAL_USER_*` de Vercel
+2. Crear un expediente de prueba (acceso directo, sin login)
+3. Registrar una actuación
+4. Verificar que todo funciona
+5. Comprobar que los datos se persisten en PostgreSQL
 
-### 6. Ejecutar pruebas de seguridad
+### 5. Ejecutar pruebas básicas
 
-- Intentar acceder sin sesión → debe redirigir a /login
-- Intentar acceder a expediente de otro usuario → debe devolver 404
-- Intentar crear actuación en expediente ajeno → debe devolver 404
-- Verificar que las cookies son HttpOnly y Secure
+- Acceder a `/expedientes` → debe mostrar la lista (vacía inicialmente)
+- Crear un nuevo expediente → debe aparecer en la lista
+- Acceder al detalle del expediente → debe mostrar la información
+- Registrar una actuación → debe aparecer en la cronología
+- Recargar la página → los datos deben persistir
+
+### 6. Consideraciones de seguridad
+
+**⚠️ ADVERTENCIA:** En modo público, cualquier persona con la URL puede:
+- Ver todos los expedientes
+- Crear, modificar y eliminar expedientes
+- Registrar actuaciones en cualquier expediente
+
+**Si necesitas privacidad, reactiva la autenticación:**
+1. Restaurar `src/pages/LoginPage.tsx`
+2. Restaurar `src/components/ProtectedRoute.tsx`
+3. Restaurar `src/hooks/useAuth.ts`
+4. Restaurar `api/login.ts` y `api/logout.ts`
+5. Modificar `src/App.tsx` para usar `ProtectedRoute`
+6. Modificar los endpoints para verificar sesión
+7. Configurar `SESSION_SECRET` en Vercel
 
 ---
 
 ## DECLARACIÓN FINAL
 
-**El código está completo y funcional, pero no se ha verificado con una base de datos real ni se ha desplegado.**
+**El código está completo y funcional en MODO PÚBLICO SIN AUTENTICACIÓN.**
 
-El propietario debe:
-1. Publicar el código en GitHub
-2. Configurar PostgreSQL (Neon recomendado)
-3. Desplegar en Vercel
-4. Ejecutar las pruebas E2E
-5. Verificar la seguridad
+### Estado actual:
+- ✅ Frontend construido con Vite/React/TypeScript
+- ✅ Backend escrito como Vercel serverless functions
+- ✅ Esquema de base de datos diseñado con usuario público
+- ✅ Acceso libre sin autenticación
+- ✅ Build de frontend verificado (`npm run build` exitoso)
+- ❌ Backend no verificado (sin base de datos)
+- ❌ Despliegue no realizado (sin acceso a Vercel)
+- ❌ Pruebas E2E no ejecutadas (sin servidor)
 
-No se declara PRODUCTION_READY porque faltan las verificaciones con base de datos real y despliegue en producción.
+### Advertencia de seguridad:
+**Esta versión NO es adecuada para datos sensibles.** Todos los expedientes son accesibles públicamente. Si necesitas privacidad, reactiva la autenticación siguiendo las instrucciones en la sección "Próximos pasos".
+
+### Para producción con datos privados:
+El propietario debe reactivar la autenticación antes de desplegar con datos reales.
+
+No se declara PRODUCTION_READY porque:
+1. Falta verificación con base de datos real
+2. Falta despliegue en producción
+3. El modo público no es seguro para datos sensibles

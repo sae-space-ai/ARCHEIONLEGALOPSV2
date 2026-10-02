@@ -1,5 +1,5 @@
 -- =============================================================
--- ARCHEION LEGAL OPS — Migración inicial
+-- ARCHEION LEGAL OPS — Migración inicial + usuario público
 -- Archivo: db/migrations/001_initial.sql
 -- =============================================================
 
@@ -13,6 +13,16 @@ CREATE TABLE IF NOT EXISTS users (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Crear usuario público para modo sin autenticación
+INSERT INTO users (id, email, password_hash, account_status)
+VALUES (
+  '00000000-0000-0000-0000-000000000000',
+  'public@archeion.local',
+  'no-password-public-mode',
+  'active'
+)
+ON CONFLICT (id) DO NOTHING;
 
 -- Tabla de expedientes
 CREATE TABLE IF NOT EXISTS cases (

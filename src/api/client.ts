@@ -1,14 +1,6 @@
-// Cliente API para ARCHEION LEGAL OPS
-// Todas las peticiones incluyen credenciales para enviar cookies de sesión
+// Cliente API para ARCHEION LEGAL OPS — MODO PÚBLICO (sin autenticación)
 
-import type { 
-  User, 
-  Case, 
-  CaseEvent, 
-  LoginRequest, 
-  LoginResponse, 
-  ApiResponse 
-} from '../types';
+import type { Case, CaseEvent, ApiResponse } from '../types';
 
 const API_BASE = '/api';
 
@@ -20,7 +12,6 @@ async function request<T>(
   
   const response = await fetch(url, {
     ...options,
-    credentials: 'include', // Enviar cookies de sesión
     headers: {
       'Content-Type': 'application/json',
       ...options.headers,
@@ -35,23 +26,7 @@ async function request<T>(
   return response.json();
 }
 
-// Autenticación
-export const authApi = {
-  getSession: () => request<{ user: User | null }>('/session'),
-  
-  login: (data: LoginRequest) => 
-    request<LoginResponse>('/login', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
-  
-  logout: () => 
-    request<{ success: boolean }>('/logout', {
-      method: 'POST',
-    }),
-};
-
-// Expedientes
+// Expedientes (acceso público)
 export const casesApi = {
   list: (filters?: { categoria?: string; estado?: string; search?: string }) => {
     const params = new URLSearchParams();
@@ -76,7 +51,7 @@ export const casesApi = {
   }),
 };
 
-// Actuaciones
+// Actuaciones (acceso público)
 export const eventsApi = {
   list: (caseId: string) => 
     request<ApiResponse<CaseEvent[]>>(`/cases/${caseId}/events`),

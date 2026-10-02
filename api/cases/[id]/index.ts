@@ -1,9 +1,9 @@
-// /api/cases/[id] — GET expediente individual
+// /api/cases/[id] — GET expediente individual — MODO PÚBLICO
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { verifySession, parseSessionCookie } from '../../../lib/session';
 import { query } from '../../../lib/db';
 import { sendJson } from '../../../lib/types';
+import { getPublicUserId } from '../../../lib/publicUser';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
@@ -11,28 +11,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    // Verificar autenticación
-    const cookieHeader = req.headers.cookie || null;
-    const token = parseSessionCookie(cookieHeader);
-    
-    if (!token) {
-      return sendJson(res, 401, { success: false, error: 'No autorizado' });
-    }
-
-    const session = await verifySession(token);
-    if (!session) {
-      return sendJson(res, 401, { success: false, error: 'Sesión inválida' });
-    }
-
+    const userId = getPublicUserId();
     const { id } = req.query;
+    
     if (!id || typeof id !== 'string') {
       return sendJson(res, 400, { success: false, error: 'ID inválido' });
     }
 
-    // Obtener expediente verificando que pertenece al usuario
+    // Obtener expediente verificando que pertenece al usuario público
     const result = await query(
       'SELECT * FROM cases WHERE id = $1 AND user_id = $2',
-      [id, session.userId]
+      [id, userId]
     );
 
     if (result.rows.length === 0) {
