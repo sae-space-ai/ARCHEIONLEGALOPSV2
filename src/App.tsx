@@ -10,9 +10,24 @@ import { useState } from 'react'
 
 const patchFiles = [
   {
+    path: 'patch/INFORME-ENTREGA.md',
+    target: 'Raíz del repositorio',
+    description: 'Informe final de entrega con contrato cumplido',
+  },
+  {
     path: 'patch/INSTRUCCIONES.md',
     target: 'Raíz del repositorio',
     description: 'Instrucciones completas de aplicación del parche',
+  },
+  {
+    path: 'patch/apply-patch.sh',
+    target: 'Raíz del repositorio (ejecutable)',
+    description: 'Script bash que crea la rama, aplica archivos, compila y deja listo para push',
+  },
+  {
+    path: 'patch/.env.example',
+    target: '.env.example',
+    description: 'Plantilla de variables de entorno (sin secretos)',
   },
   {
     path: 'patch/lib/supabase/server.ts',
