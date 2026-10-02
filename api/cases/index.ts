@@ -1,23 +1,12 @@
-// /api/cases — GET (listar) y POST (crear) expedientes — MODO PRIVADO
+// /api/cases — GET (listar) y POST (crear) expedientes — MODO PÚBLICO
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { verifySession, parseSessionCookie } from '../../lib/session';
 import { query } from '../../lib/db';
 import { validate, createCaseSchema } from '../../lib/validation';
 import { sendJson } from '../../lib/types';
 
-// Helper para verificar autenticación
-async function requireAuth(req: VercelRequest): Promise<{ userId: string; email: string } | null> {
-  const cookieHeader = req.headers.cookie || null;
-  const token = parseSessionCookie(cookieHeader);
-  
-  if (!token) return null;
-  
-  const session = await verifySession(token);
-  if (!session) return null;
-  
-  return { userId: session.userId, email: session.email };
-}
+// User ID fijo para modo público (sin autenticación)
+const PUBLIC_USER_ID = '00000000-0000-0000-0000-000000000000';
 
 // GET /api/cases — Listar expedientes del usuario autenticado
 async function handleGet(req: VercelRequest, res: VercelResponse, userId: string) {
@@ -147,19 +136,15 @@ async function handlePost(req: VercelRequest, res: VercelResponse, userId: strin
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Verificar autenticación
-  const auth = await requireAuth(req);
-  
-  if (!auth) {
-    return sendJson(res, 401, { success: false, error: 'No autorizado. Inicia sesión.' });
-  }
+  // Modo público: usar user_id fijo
+  const userId = PUBLIC_USER_ID;
 
   if (req.method === 'GET') {
-    return handleGet(req, res, auth.userId);
+    return handleGet(req, res, userId);
   }
 
   if (req.method === 'POST') {
-    return handlePost(req, res, auth.userId);
+    return handlePost(req, res, userId);
   }
 
   return sendJson(res, 405, { error: 'Method not allowed' });
