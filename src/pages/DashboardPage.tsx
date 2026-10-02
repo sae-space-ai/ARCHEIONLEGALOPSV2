@@ -14,6 +14,7 @@ export function DashboardPage() {
     cerrados: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadStats();
@@ -30,8 +31,10 @@ export function DashboardPage() {
           cerrados: cases.filter(c => c.estado === 'cerrado' || c.estado === 'archivado').length,
         });
       }
-    } catch (error) {
-      console.error('Error al cargar estadísticas:', error);
+      setError(null);
+    } catch (err) {
+      console.error('Error al cargar estadísticas:', err);
+      setError(err instanceof Error ? err.message : 'Error al cargar expedientes');
     } finally {
       setLoading(false);
     }
@@ -47,6 +50,14 @@ export function DashboardPage() {
 
         {loading ? (
           <div className="text-slate-400">Cargando estadísticas...</div>
+        ) : error ? (
+          <div className="bg-red-900/30 border border-red-700 rounded-xl p-6">
+            <h3 className="text-red-300 font-semibold mb-2">⚠️ Error al conectar con el servidor</h3>
+            <p className="text-red-200 text-sm mb-3">{error}</p>
+            <p className="text-slate-400 text-xs">
+              Consulta <code className="bg-slate-800 px-1 rounded">CONFIGURACION.md</code> para resolver el problema.
+            </p>
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">

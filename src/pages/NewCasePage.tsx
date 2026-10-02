@@ -29,7 +29,12 @@ export function NewCasePage() {
         setError(result.error || 'Error al crear el expediente');
       }
     } catch (err) {
-      setError('Error de conexión. Inténtalo de nuevo.');
+      // Mostrar el error real en lugar de un mensaje genérico
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Error desconocido al crear el expediente.');
+      }
     } finally {
       setLoading(false);
     }

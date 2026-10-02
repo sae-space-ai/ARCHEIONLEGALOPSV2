@@ -38,9 +38,35 @@ async function handleGet(req: VercelRequest, res: VercelResponse, userId: string
     const result = await query(sql, params);
 
     return sendJson(res, 200, { success: true, data: result.rows });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error en GET /api/cases:', error);
-    return sendJson(res, 500, { success: false, error: 'Error al cargar expedientes' });
+    
+    // Mensajes específicos según el tipo de error
+    if (error.message?.includes('DATABASE_URL')) {
+      return sendJson(res, 500, { 
+        success: false, 
+        error: 'Base de datos no configurada. Contacta con el administrador.' 
+      });
+    }
+    
+    if (error.code === '42P01') {
+      return sendJson(res, 500, { 
+        success: false, 
+        error: 'Las tablas de la base de datos no existen. Ejecuta las migraciones SQL.' 
+      });
+    }
+    
+    if (error.code === '23503') {
+      return sendJson(res, 500, { 
+        success: false, 
+        error: 'Error de integridad referencial. El usuario público no existe en la base de datos.' 
+      });
+    }
+    
+    return sendJson(res, 500, { 
+      success: false, 
+      error: `Error al cargar expedientes: ${error.message || 'Error desconocido'}` 
+    });
   }
 }
 
@@ -77,9 +103,42 @@ async function handlePost(req: VercelRequest, res: VercelResponse, userId: strin
     );
 
     return sendJson(res, 201, { success: true, data: result.rows[0] });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error en POST /api/cases:', error);
-    return sendJson(res, 500, { success: false, error: 'Error al crear expediente' });
+    
+    // Mensajes específicos según el tipo de error
+    if (error.message?.includes('DATABASE_URL')) {
+      return sendJson(res, 500, { 
+        success: false, 
+        error: 'Base de datos no configurada. Contacta con el administrador.' 
+      });
+    }
+    
+    if (error.code === '42P01') {
+      return sendJson(res, 500, { 
+        success: false, 
+        error: 'Las tablas de la base de datos no existen. Ejecuta las migraciones SQL.' 
+      });
+    }
+    
+    if (error.code === '23503') {
+      return sendJson(res, 500, { 
+        success: false, 
+        error: 'Error de integridad referencial. El usuario público no existe en la base de datos.' 
+      });
+    }
+    
+    if (error.code === '23505') {
+      return sendJson(res, 409, { 
+        success: false, 
+        error: 'Ya existe un expediente con esa referencia.' 
+      });
+    }
+    
+    return sendJson(res, 500, { 
+      success: false, 
+      error: `Error al crear expediente: ${error.message || 'Error desconocido'}` 
+    });
   }
 }
 

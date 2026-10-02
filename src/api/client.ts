@@ -1,8 +1,22 @@
 // Cliente API para ARCHEION LEGAL OPS — MODO PÚBLICO (sin autenticación)
+// Mejorado: muestra errores reales y distingue entre tipos de error
 
 import type { Case, CaseEvent, ApiResponse } from '../types';
 
 const API_BASE = '/api';
+
+// Error personalizado para errores de API
+export class ApiError extends Error {
+  status: number;
+  serverMessage: string;
+  
+  constructor(status: number, serverMessage: string) {
+    super(serverMessage);
+    this.name = 'ApiError';
+    this.status = status;
+    this.serverMessage = serverMessage;
+  }
+}
 
 async function request<T>(
   endpoint: string,
@@ -10,20 +24,68 @@ async function request<T>(
 ): Promise<T> {
   const url = `${API_BASE}${endpoint}`;
   
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Error desconocido' }));
-    throw new Error(error.error || `HTTP ${response.status}`);
+  let response: Response;
+  
+  try {
+    response = await fetch(url, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+    });
+  } catch (networkError) {
+    // Error de red real (sin conexión, DNS, CORS, etc.)
+    throw new ApiError(0, 'No se pudo conectar con el servidor. Verifica tu conexión a internet.');
   }
 
-  return response.json();
+  // Intentar parsear la respuesta como JSON
+  let responseBody: any;
+  const contentType = response.headers.get('content-type') || '';
+  
+  if (contentType.includes('application/json')) {
+    try {
+      responseBody = await response.json();
+    } catch {
+      throw new ApiError(
+        response.status,
+        `El servidor devolvió una respuesta inválida (HTTP ${response.status}).`
+      );
+    }
+  } else {
+    // La respuesta no es JSON (probablemente HTML de error de Vercel)
+    const text = await response.text().catch(() => '');
+    
+    if (response.status === 500) {
+      if (text.includes('FUNCTION_INVOCATION_FAILED')) {
+        throw new ApiError(
+          500,
+          'Error del servidor. Probablemente la base de datos no está configurada. Contacta con el administrador.'
+        );
+      }
+      throw new ApiError(500, `Error interno del servidor (HTTP 500).`);
+    }
+    
+    if (response.status === 404) {
+      throw new ApiError(
+        404,
+        `La ruta ${endpoint} no existe. El backend puede no estar desplegado correctamente.`
+      );
+    }
+    
+    throw new ApiError(
+      response.status,
+      `Respuesta inesperada del servidor (HTTP ${response.status}).`
+    );
+  }
+
+  // Respuesta JSON recibida
+  if (!response.ok) {
+    const errorMessage = responseBody?.error || `Error HTTP ${response.status}`;
+    throw new ApiError(response.status, errorMessage);
+  }
+
+  return responseBody as T;
 }
 
 // Expedientes (acceso público)

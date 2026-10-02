@@ -11,7 +11,11 @@ export function getPool(): Pool {
     const connectionString = process.env.DATABASE_URL;
     
     if (!connectionString) {
-      throw new Error('DATABASE_URL no está configurada');
+      throw new Error(
+        'DATABASE_URL no está configurada en Vercel. ' +
+        'Configura la variable de entorno en Vercel Dashboard → Settings → Environment Variables. ' +
+        'El valor debe ser la URL de conexión completa a PostgreSQL (ej: postgresql://user:pass@host:port/db).'
+      );
     }
 
     pool = new Pool({
