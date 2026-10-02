@@ -1,12 +1,25 @@
-// /api/cases — GET (listar) y POST (crear) expedientes — MODO PÚBLICO
+// /api/cases — GET (listar) y POST (crear) expedientes — MODO PRIVADO
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { verifySession, parseSessionCookie } from '../../lib/session';
 import { query } from '../../lib/db';
 import { validate, createCaseSchema } from '../../lib/validation';
 import { sendJson } from '../../lib/types';
-import { getPublicUserId } from '../../lib/publicUser';
 
-// GET /api/cases — Listar expedientes (acceso público)
+// Helper para verificar autenticación
+async function requireAuth(req: VercelRequest): Promise<{ userId: string; email: string } | null> {
+  const cookieHeader = req.headers.cookie || null;
+  const token = parseSessionCookie(cookieHeader);
+  
+  if (!token) return null;
+  
+  const session = await verifySession(token);
+  if (!session) return null;
+  
+  return { userId: session.userId, email: session.email };
+}
+
+// GET /api/cases — Listar expedientes del usuario autenticado
 async function handleGet(req: VercelRequest, res: VercelResponse, userId: string) {
   try {
     const { categoria, estado, search } = req.query;
@@ -41,7 +54,6 @@ async function handleGet(req: VercelRequest, res: VercelResponse, userId: string
   } catch (error: any) {
     console.error('Error en GET /api/cases:', error);
     
-    // Mensajes específicos según el tipo de error
     if (error.message?.includes('DATABASE_URL')) {
       return sendJson(res, 500, { 
         success: false, 
@@ -56,13 +68,6 @@ async function handleGet(req: VercelRequest, res: VercelResponse, userId: string
       });
     }
     
-    if (error.code === '23503') {
-      return sendJson(res, 500, { 
-        success: false, 
-        error: 'Error de integridad referencial. El usuario público no existe en la base de datos.' 
-      });
-    }
-    
     return sendJson(res, 500, { 
       success: false, 
       error: `Error al cargar expedientes: ${error.message || 'Error desconocido'}` 
@@ -70,7 +75,7 @@ async function handleGet(req: VercelRequest, res: VercelResponse, userId: string
   }
 }
 
-// POST /api/cases — Crear nuevo expediente (acceso público)
+// POST /api/cases — Crear nuevo expediente
 async function handlePost(req: VercelRequest, res: VercelResponse, userId: string) {
   try {
     // Validar datos
@@ -106,7 +111,6 @@ async function handlePost(req: VercelRequest, res: VercelResponse, userId: strin
   } catch (error: any) {
     console.error('Error en POST /api/cases:', error);
     
-    // Mensajes específicos según el tipo de error
     if (error.message?.includes('DATABASE_URL')) {
       return sendJson(res, 500, { 
         success: false, 
@@ -124,7 +128,7 @@ async function handlePost(req: VercelRequest, res: VercelResponse, userId: strin
     if (error.code === '23503') {
       return sendJson(res, 500, { 
         success: false, 
-        error: 'Error de integridad referencial. El usuario público no existe en la base de datos.' 
+        error: 'Error de integridad referencial. Usuario no existe.' 
       });
     }
     
@@ -143,15 +147,19 @@ async function handlePost(req: VercelRequest, res: VercelResponse, userId: strin
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Modo público: usar user_id público
-  const userId = getPublicUserId();
+  // Verificar autenticación
+  const auth = await requireAuth(req);
+  
+  if (!auth) {
+    return sendJson(res, 401, { success: false, error: 'No autorizado. Inicia sesión.' });
+  }
 
   if (req.method === 'GET') {
-    return handleGet(req, res, userId);
+    return handleGet(req, res, auth.userId);
   }
 
   if (req.method === 'POST') {
-    return handlePost(req, res, userId);
+    return handlePost(req, res, auth.userId);
   }
 
   return sendJson(res, 405, { error: 'Method not allowed' });

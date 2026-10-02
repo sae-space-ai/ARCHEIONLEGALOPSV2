@@ -1,7 +1,13 @@
-// Cliente API para ARCHEION LEGAL OPS — MODO PÚBLICO (sin autenticación)
-// Mejorado: muestra errores reales y distingue entre tipos de error
+// Cliente API para ARCHEION LEGAL OPS — MODO PRIVADO con autenticación
 
-import type { Case, CaseEvent, ApiResponse } from '../types';
+import type { 
+  User, 
+  Case, 
+  CaseEvent, 
+  LoginRequest, 
+  LoginResponse, 
+  ApiResponse 
+} from '../types';
 
 const API_BASE = '/api';
 
@@ -29,13 +35,13 @@ async function request<T>(
   try {
     response = await fetch(url, {
       ...options,
+      credentials: 'include', // Enviar cookies de sesión
       headers: {
         'Content-Type': 'application/json',
         ...options.headers,
       },
     });
   } catch (networkError) {
-    // Error de red real (sin conexión, DNS, CORS, etc.)
     throw new ApiError(0, 'No se pudo conectar con el servidor. Verifica tu conexión a internet.');
   }
 
@@ -53,14 +59,13 @@ async function request<T>(
       );
     }
   } else {
-    // La respuesta no es JSON (probablemente HTML de error de Vercel)
     const text = await response.text().catch(() => '');
     
     if (response.status === 500) {
       if (text.includes('FUNCTION_INVOCATION_FAILED')) {
         throw new ApiError(
           500,
-          'Error del servidor. Probablemente la base de datos no está configurada. Contacta con el administrador.'
+          'Error del servidor. Probablemente la base de datos no está configurada.'
         );
       }
       throw new ApiError(500, `Error interno del servidor (HTTP 500).`);
@@ -79,7 +84,6 @@ async function request<T>(
     );
   }
 
-  // Respuesta JSON recibida
   if (!response.ok) {
     const errorMessage = responseBody?.error || `Error HTTP ${response.status}`;
     throw new ApiError(response.status, errorMessage);
@@ -88,7 +92,23 @@ async function request<T>(
   return responseBody as T;
 }
 
-// Expedientes (acceso público)
+// Autenticación
+export const authApi = {
+  getSession: () => request<{ user: User | null }>('/session'),
+  
+  login: (data: LoginRequest) => 
+    request<LoginResponse>('/login', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  
+  logout: () => 
+    request<{ success: boolean }>('/logout', {
+      method: 'POST',
+    }),
+};
+
+// Expedientes (acceso privado)
 export const casesApi = {
   list: (filters?: { categoria?: string; estado?: string; search?: string }) => {
     const params = new URLSearchParams();
@@ -113,7 +133,7 @@ export const casesApi = {
   }),
 };
 
-// Actuaciones (acceso público)
+// Actuaciones (acceso privado)
 export const eventsApi = {
   list: (caseId: string) => 
     request<ApiResponse<CaseEvent[]>>(`/cases/${caseId}/events`),

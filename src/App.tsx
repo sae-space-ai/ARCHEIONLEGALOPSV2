@@ -1,20 +1,53 @@
-// Aplicación principal ARCHEION LEGAL OPS — MODO SIN AUTENTICACIÓN
+// Aplicación principal ARCHEION LEGAL OPS — MODO PRIVADO
 
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { CasesPage } from './pages/CasesPage';
 import { CaseDetailPage } from './pages/CaseDetailPage';
 import { NewCasePage } from './pages/NewCasePage';
+import { ProtectedRoute } from './components/ProtectedRoute';
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Todas las rutas son públicas (sin autenticación) */}
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/expedientes" element={<CasesPage />} />
-        <Route path="/expedientes/nuevo" element={<NewCasePage />} />
-        <Route path="/expedientes/:id" element={<CaseDetailPage />} />
+        {/* Ruta pública: Login */}
+        <Route path="/login" element={<LoginPage />} />
+
+        {/* Rutas protegidas */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/expedientes"
+          element={
+            <ProtectedRoute>
+              <CasesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/expedientes/nuevo"
+          element={
+            <ProtectedRoute>
+              <NewCasePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/expedientes/:id"
+          element={
+            <ProtectedRoute>
+              <CaseDetailPage />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Redirecciones */}
         <Route path="/" element={<Navigate to="/dashboard" replace />} />

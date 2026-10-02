@@ -1,12 +1,21 @@
-// Layout principal con header y navegación — MODO PÚBLICO
+// Layout principal con header y navegación — MODO PRIVADO
 
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
 export function Layout({ children }: LayoutProps) {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
+  };
+
   return (
     <div className="min-h-screen bg-slate-900">
       <header className="bg-slate-800 border-b border-slate-700">
@@ -16,7 +25,7 @@ export function Layout({ children }: LayoutProps) {
               <span className="text-2xl">⚖️</span>
               <div>
                 <h1 className="text-white font-bold text-lg">ARCHEION LEGAL OPS</h1>
-                <p className="text-slate-400 text-xs">Gestión de expedientes (acceso libre)</p>
+                <p className="text-slate-400 text-xs">Gestión privada de expedientes</p>
               </div>
             </div>
 
@@ -33,9 +42,13 @@ export function Layout({ children }: LayoutProps) {
             </nav>
 
             <div className="flex items-center gap-4">
-              <span className="px-3 py-1 bg-amber-500/20 text-amber-300 text-xs rounded-full border border-amber-500/30">
-                Modo público
-              </span>
+              <span className="text-slate-400 text-sm">{user?.email}</span>
+              <button
+                onClick={handleLogout}
+                className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-sm rounded-lg transition-colors"
+              >
+                Cerrar sesión
+              </button>
             </div>
           </div>
         </div>
