@@ -1,5 +1,5 @@
 -- =============================================================
--- ARCHEION LEGAL OPS — Migración: Eliminar usuario público
+-- ARCHEION LEGAL OPS — Migración segura: Eliminar usuario público
 -- Archivo: db/migrations/002_remove_public_user.sql
 -- =============================================================
 -- Esta migración elimina el usuario público y reasigna sus
