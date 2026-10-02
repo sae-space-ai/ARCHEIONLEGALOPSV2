@@ -1,0 +1,72 @@
+// /api/cases/[id]/events — GET (listar) y POST (crear) actuaciones
+
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { verifySession, parseSessionCookie } from '../../../lib/session';
+import { query, transaction } from '../../../lib/db';
+import { validate, createEventSchema } from '../../../lib/validation';
+import { sendJson } from '../../../lib/types';
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  try {
+    // Verificar autenticación
+    const cookieHeader = req.headers.cookie || null;
+    const token = parseSessionCookie(cookieHeader);
+    
+    if (!token) {
+      return sendJson(res, 401, { success: false, error: 'No autorizado' });
+    }
+
+    const session = await verifySession(token);
+    if (!session) {
+      return sendJson(res, 401, { success: false, error: 'Sesión inválida' });
+    }
+
+    const { id: caseId } = req.query;
+    if (!caseId || typeof caseId !== 'string') {
+      return sendJson(res, 400, { success: false, error: 'ID de expediente inválido' });
+    }
+
+    // Verificar que el expediente existe y pertenece al usuario
+    const caseResult = await query(
+      'SELECT id FROM cases WHERE id = $1 AND user_id = $2',
+      [caseId, session.userId]
+    );
+
+    if (caseResult.rows.length === 0) {
+      return sendJson(res, 404, { success: false, error: 'Expediente no encontrado' });
+    }
+
+    // GET /api/cases/:id/events — Listar actuaciones
+    if (req.method === 'GET') {
+      const events = await query(
+        'SELECT * FROM case_events WHERE case_id = $1 ORDER BY fecha_actuacion DESC, created_at DESC',
+        [caseId]
+      );
+      return sendJson(res, 200, { success: true, data: events.rows });
+    }
+
+    // POST /api/cases/:id/events — Crear actuación
+    if (req.method === 'POST') {
+      const validation = validate(createEventSchema, req.body);
+      if (!validation.success) {
+        return sendJson(res, 400, { success: false, error: validation.error });
+      }
+
+      const { fecha_actuacion, tipo, descripcion } = validation.data;
+
+      const result = await query(
+        `INSERT INTO case_events (case_id, user_id, fecha_actuacion, tipo, descripcion)
+         VALUES ($1, $2, $3, $4, $5)
+         RETURNING *`,
+        [caseId, session.userId, fecha_actuacion, tipo, descripcion]
+      );
+
+      return sendJson(res, 201, { success: true, data: result.rows[0] });
+    }
+
+    return sendJson(res, 405, { error: 'Method not allowed' });
+  } catch (error) {
+    console.error('Error en /api/cases/[id]/events:', error);
+    return sendJson(res, 500, { success: false, error: 'Error interno del servidor' });
+  }
+}
